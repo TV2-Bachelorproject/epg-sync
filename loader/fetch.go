@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/jinzhu/gorm"
 )
 
 //EPG struct
@@ -15,6 +17,7 @@ type EPG struct {
 
 //Program struct
 type Program struct {
+	gorm.Model
 	ID                  string `json:"programId"`
 	Title               string
 	OriginalTitle       string
@@ -25,17 +28,23 @@ type Program struct {
 	Genres              []string
 	SeasonID            string
 	SeasonEpisodeNumber string
-	Production          struct {
-		Country     string
-		Year        int
-		ProducedBy  string
-		ProducedFor string
-		Editor      string
-	}
-	Airtime struct {
-		From int
-		To   int
-	}
+	Production          Production
+	Airtime             Airtime
+}
+
+//Airtime struct
+type Airtime struct {
+	From int
+	To   int
+}
+
+//Production struct
+type Production struct {
+	Country     string
+	Year        int
+	ProducedBy  string
+	ProducedFor string
+	Editor      string
 }
 
 // FetchURL data
