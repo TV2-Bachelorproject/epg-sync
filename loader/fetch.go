@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
 //EPG struct
@@ -18,28 +19,28 @@ type EPG struct {
 //Program struct
 type Program struct {
 	gorm.Model
-	ID                  string `json:"programId"`
+	ProgramID           string `json:"programId" gorm:"primary_key"`
 	Title               string
 	OriginalTitle       string
 	Teaser              string
 	Description         string
 	CastRaw             string `json:"cast"`
 	Category            string
-	Genres              []string
-	SeasonID            string
+	Genres              pq.StringArray `gorm:"type:varchar(100)[]"`
+	SeasonID            string         `gorm:"type:varchar(100)"`
 	SeasonEpisodeNumber string
-	Production          Production
-	Airtime             Airtime
+	ProductionID        int
+	Production          Production `gorm:"foreignkey:production_id"`
+	AirtimeFrom         int        `gorm:"type:bigint"`
+	AirtimeTo           int        `gorm:"type:bigint"`
+	Airtime             struct {
+		From int `gorm:"-"`
+		To   int `gorm:"-"`
+	}
 }
 
-//Airtime struct
-type Airtime struct {
-	From int
-	To   int
-}
-
-//Production struct
 type Production struct {
+	gorm.Model
 	Country     string
 	Year        int
 	ProducedBy  string
@@ -68,12 +69,12 @@ func FetchURL(url, method string) string {
 }
 
 //FetchFile data
-func FetchFile(fileName string) (string, error) {
+func FetchFile(fileName string) ([]Program, error) {
 	//Open json file
 	jsonFile, err := os.Open(fileName)
 
 	if err != nil {
-		return "", err
+		return []Program{}, err
 	}
 
 	//read data from jsonfile
@@ -83,16 +84,10 @@ func FetchFile(fileName string) (string, error) {
 
 	json.Unmarshal([]byte(byteValue), &data)
 
-	json, err := json.MarshalIndent(data, "", "\t")
-
-	if err != nil {
-		return "", err
-	}
-
 	//close file so we can parse later on
 	defer jsonFile.Close()
 
-	return string(json), nil
+	return data.Schedule, nil
 }
 
 //CreateFile for json
