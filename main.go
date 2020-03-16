@@ -10,23 +10,24 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
+var db *gorm.DB
+
+const (
+	HOST        = "127.0.0.1"
+	PORT        = "5432"
+	DB_USER     = "root"
+	DB_PASSWORD = "root"
+	DB_NAME     = "root"
+)
+
 func main() {
 
-	//connect to database
-	db, err := gorm.Open("postgres", "host=127.0.0.1 port=5432 user=root dbname=root password=root sslmode=disable")
+	initDB()
+	dataToDB()
+	closeDB()
+}
 
-	if err != nil {
-		panic(err)
-	}
-	//if error close connection
-	defer db.Close()
-
-	//Migrate tables from models
-	db.AutoMigrate(&loader.Production{}, &loader.Program{})
-
-	// //Add foreignKeys
-	//db.Model(&Program{}).AddForeignKey("production_id", "productions(id)", "RESTRICT", "RESTRICT")
-
+func dataToDB() {
 	if len(os.Args) < 2 {
 		fmt.Fprint(os.Stderr, "Missing argument")
 		os.Exit(1)
@@ -50,4 +51,27 @@ func main() {
 			db.Create(&program)
 		}
 	}
+}
+
+func initDB() {
+	var err error
+
+	//connect to database
+	dbinfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
+		HOST, PORT, DB_USER, DB_NAME, DB_PASSWORD)
+	db, err = gorm.Open("postgres", dbinfo)
+
+	if err != nil {
+		panic(err)
+	}
+
+	//Migrate tables from models
+	db.AutoMigrate(&loader.Production{}, &loader.Program{})
+
+	// //Add foreignKeys
+	//db.Model(&Program{}).AddForeignKey("production_id", "productions(id)", "RESTRICT", "RESTRICT")
+}
+
+func closeDB() error {
+	return db.Close()
 }
