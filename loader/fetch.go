@@ -22,14 +22,16 @@ type Program struct {
 	ProgramID           string `json:"programId" gorm:"primary_key"`
 	Title               string
 	OriginalTitle       string
+	EpisodeTitle        string
 	Teaser              string
 	Description         string
 	CastRaw             string `json:"cast"`
 	Category            string
 	Genres              pq.StringArray `gorm:"type:varchar(100)[]"`
 	SeasonID            string         `gorm:"type:varchar(100)"`
-	SeasonEpisodeNumber string
-	ProductionID        int
+	SeasonEpisodeNumber int
+	LinearEpisodeNumber int
+	ProductionID        uint
 	Production          Production `gorm:"foreignkey:production_id"`
 	AirtimeFrom         int        `gorm:"type:bigint"`
 	AirtimeTo           int        `gorm:"type:bigint"`

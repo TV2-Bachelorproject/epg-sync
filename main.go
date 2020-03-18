@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/TV2-Bachelorproject/fetcher/loader"
+	"github.com/TV2-Bachelorproject/server/model/public"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -46,9 +47,35 @@ func dataToDB() {
 		}
 
 		for _, program := range programs {
-			program.AirtimeFrom = program.Airtime.From
-			program.AirtimeTo = program.Airtime.To
-			db.Create(&program)
+			p := &public.Program{}
+
+			p.ProgramID = program.ProgramID
+
+			if program.EpisodeTitle == "" {
+				p.Title = program.Title
+			} else {
+				p.Title = program.EpisodeTitle
+			}
+
+			p.Teaser = program.Teaser
+			p.Description = program.Description
+			p.Cast = program.CastRaw
+			p.Category.Name = program.Category
+			p.Serie.Title = program.Title
+			p.Season.RawSeasonID = program.SeasonID
+			p.Season.Title = program.OriginalTitle
+			p.SeasonEpisodeNumber = program.SeasonEpisodeNumber
+			p.LinearEpisodeNumber = program.LinearEpisodeNumber
+			p.ProductionID = program.ProductionID
+			p.Production.Country = program.Production.Country
+			p.Production.Year = program.Production.Year
+			p.Production.ProducedBy = program.Production.ProducedBy
+			p.Production.ProducedFor = program.Production.ProducedFor
+			p.Production.Editor = program.Production.Editor
+			p.AirtimeFrom = program.Airtime.From
+			p.AirtimeTo = program.Airtime.To
+
+			db.Create(p)
 		}
 	}
 }
@@ -66,7 +93,7 @@ func initDB() {
 	}
 
 	//Migrate tables from models
-	db.AutoMigrate(&loader.Production{}, &loader.Program{})
+	//db.AutoMigrate(&loader.Production{}, &loader.Program{})
 
 	// //Add foreignKeys
 	//db.Model(&Program{}).AddForeignKey("production_id", "productions(id)", "RESTRICT", "RESTRICT")
