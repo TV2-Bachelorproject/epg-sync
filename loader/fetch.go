@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/jinzhu/gorm"
-	"github.com/lib/pq"
 )
 
 //EPG struct
@@ -27,8 +26,8 @@ type Program struct {
 	Description         string
 	CastRaw             string `json:"cast"`
 	Category            string
-	Genres              pq.StringArray `gorm:"type:varchar(100)[]"`
-	SeasonID            string         `gorm:"type:varchar(100)"`
+	Genres              []string `gorm:"type:varchar(100)[]"`
+	SeasonID            string   `gorm:"type:varchar(100)"`
 	SeasonEpisodeNumber int
 	LinearEpisodeNumber int
 	ProductionID        uint

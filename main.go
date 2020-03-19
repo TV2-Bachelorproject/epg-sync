@@ -46,6 +46,8 @@ func dataToDB() {
 			os.Exit(1)
 		}
 
+		creatingSupportingData(programs)
+
 		for _, program := range programs {
 			p := &public.Program{}
 
@@ -60,24 +62,72 @@ func dataToDB() {
 			p.Teaser = program.Teaser
 			p.Description = program.Description
 			p.Cast = program.CastRaw
-			p.Category.Name = program.Category
 			p.Serie.Title = program.Title
-			p.Season.RawSeasonID = program.SeasonID
-			p.Season.Title = program.OriginalTitle
 			p.SeasonEpisodeNumber = program.SeasonEpisodeNumber
 			p.LinearEpisodeNumber = program.LinearEpisodeNumber
-			p.ProductionID = program.ProductionID
-			p.Production.Country = program.Production.Country
-			p.Production.Year = program.Production.Year
-			p.Production.ProducedBy = program.Production.ProducedBy
-			p.Production.ProducedFor = program.Production.ProducedFor
-			p.Production.Editor = program.Production.Editor
 			p.AirtimeFrom = program.Airtime.From
 			p.AirtimeTo = program.Airtime.To
+			p.Season.SerieID = p.Serie.ID
 
+			setupRelations(program, p)
 			db.Create(p)
 		}
 	}
+}
+
+func creatingSupportingData(programs []loader.Program) {
+	for _, program := range programs {
+		c := public.Category{Name: program.Category}
+		sr := public.Serie{Title: program.Title}
+		s := public.Season{Title: program.OriginalTitle,
+			RawSeasonID: program.SeasonID,
+		}
+		p := public.Production{
+			Country:     program.Production.Country,
+			Year:        program.Production.Year,
+			ProducedBy:  program.Production.ProducedBy,
+			ProducedFor: program.Production.ProducedFor,
+			Editor:      program.Production.Editor,
+		}
+
+		db.Where(p).FirstOrCreate(&p)
+
+		if sr.Title != "" {
+			db.Where(sr).FirstOrCreate(&sr)
+		}
+		//The  && removes movies and TV2 intern programs from the season table
+		if s.Title != "" && s.RawSeasonID != "" {
+			db.Where(s).FirstOrCreate(&s)
+		}
+
+		if c.Name != "" {
+			db.Where(c).FirstOrCreate(&c)
+		}
+
+		for _, genre := range program.Genres {
+			g := public.Genre{Name: genre}
+
+			if g.Name != "" {
+				db.Where(g).FirstOrCreate(&g)
+			}
+
+		}
+	}
+}
+
+func setupRelations(program loader.Program, p *public.Program) {
+	//Setup relations between tables
+	db.Where(public.Category{Name: program.Category}).First(&p.Category)
+	db.Where("name IN (?)", program.Genres).Find(&p.Genres)
+	db.Where(public.Season{RawSeasonID: program.SeasonID}).First(&p.Season)
+	db.Where(public.Serie{Title: program.Title}).First(&p.Serie)
+	db.Where(public.Production{
+		Year:        program.Production.Year,
+		Country:     program.Production.Country,
+		ProducedBy:  program.Production.ProducedBy,
+		ProducedFor: program.Production.ProducedFor,
+		Editor:      program.Production.Editor,
+	}).First(&p.Production)
 }
 
 func initDB() {
